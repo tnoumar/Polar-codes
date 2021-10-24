@@ -1,0 +1,41 @@
+\documentclass[tikz]{standalone}
+\usepackage{pgfplots}
+\usepackage{grffile}
+\usepackage{pgfplots,tikz}
+\usetikzlibrary{shapes,decorations,arrows,positioning,fit}
+\pgfplotsset{compat=newest}
+
+\begin{document}
+\pagecolor{white}
+
+\begin{tikzpicture} 
+
+% Style definitions
+\tikzset{variable_node_style/.style={circle,draw=blue,fill=blue!30!white, inner sep = 0.1pt}};
+\tikzset{check_node_style/.style={regular polygon,regular polygon sides=4,draw=green!50!black,fill=green!30!white, inner sep = 0.1pt}};
+\tikzset{edge_style/.style={draw=black,line width=1pt }};
+
+% Variable Nodes
+\node [variable_node_style, label=above:{$x_{0}$}] (x1) at (4.000000,14.000000) {$=$};
+\node [variable_node_style, label=above:{$x_{1}$}] (x2) at (2.000000,2.000000) {$=$};
+\node [variable_node_style, label=above:{$x_{2}$}] (x3) at (4.000000,10.000000) {$=$};
+\node [variable_node_style, label=above:{$x_{3}$}] (x4) at (3.000000,6.000000) {$=$};
+\node [variable_node_style, label=above:{$x_{4}$}] (x5) at (4.000000,2.000000) {$=$};
+\node [variable_node_style, label=above:{$x_{5}$}] (x6) at (5.000000,6.000000) {$=$};
+
+% Check Nodes
+\node [check_node_style,label=above:{$c_{0}$}] (c1) at (4.000000,12.000000) {$+$};
+\node [check_node_style,label=above:{$c_{1}$}] (c2) at (3.000000,4.000000) {$+$};
+\node [check_node_style,label=above:{$c_{2}$}] (c3) at (4.000000,8.000000) {$+$};
+
+% Edges
+\path [edge_style] (x1) -- (c1);
+\path [edge_style] (x2) -- (c2);
+\path [edge_style] (x3) -- (c1);
+\path [edge_style] (x3) -- (c3);
+\path [edge_style] (x4) -- (c2);
+\path [edge_style] (x4) -- (c3);
+\path [edge_style] (x5) -- (c2);
+\path [edge_style] (x6) -- (c3);
+\end{tikzpicture}
+ \end{document}
