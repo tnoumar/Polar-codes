@@ -1,3 +1,5 @@
+%% compare performances for 10 iterations 
+
 clear
 clc
 close all
@@ -5,20 +7,16 @@ close all
 %% Parametres
 % -------------------------------------------------------------------------
 addpath('src')
-simulation_name = 'non_codee';
+simulation_name = 'compare_10iterations';
 
 R = 1; % Rendement de la communication
 
-
-[H] = alist2sparse('alist/DEBUG_6_3.alist');
+[H] = alist2sparse('alist/CCSDS_64_128.alist');
 [h, G] = ldpc_h2g(H);
 H=full(h);
-sH=size(H);
-R = sH(2)/sH(1); % Rendement de la communication
-
-nb_its=[1,5,10,50];
-pqt_par_trame = 110; % Nombre de paquets par trame
-bit_par_pqt   = 3;% Nombre de bits par paquet
+nb_it=10;
+pqt_par_trame = 50; % Nombre de paquets par trame
+bit_par_pqt   = 64;% Nombre de bits par paquet
 K = pqt_par_trame*bit_par_pqt; % Nombre de bits de message par trame
 N = K/R; % Nombre de bits cod�s par trame (cod�e)
 
@@ -30,7 +28,7 @@ EbN0dB_max  = 10; % Maximum de EbN0
 EbN0dB_step = 1;% Pas de EbN0
 
 nbr_erreur  = 100;  % Nombre d'erreurs à observer avant de calculer un BER
-nbr_bit_max = 5e6;% Nombre de bits max à simuler
+nbr_bit_max = 1e6;% Nombre de bits max à simuler
 ber_min     = 1e-9; % BER min
 
 EbN0dB = EbN0dB_min:EbN0dB_step:EbN0dB_max;     % Points de EbN0 en dB � simuler
@@ -65,9 +63,7 @@ awgn_channel = comm.AWGNChannel(...
 stat_erreur = comm.ErrorRate(); % Calcul du nombre d'erreur et du BER
 
 %% Initialisation des vecteurs de r�sultats
-ber = zeros(1,length(EbN0dB)); %bit error rate
-per = zeros(1,length(EbN0dB)); %packet error rate
-fer = zeros(1,length(EbN0dB)); %frame error rate
+ber = zeros(1,length(EbN0dB));
 Pe = qfunc(sqrt(2*EbN0));
 
 %% Pr�paration de l'affichage
@@ -78,21 +74,27 @@ ylim([1e-6 1])
 grid on
 xlabel('$\frac{E_b}{N_0}$ en dB','Interpreter', 'latex', 'FontSize',14)
 ylabel('TEB','Interpreter', 'latex', 'FontSize',14)
+for decoding_scheme=1:2
 
 %% Pr�paration de l'affichage en console
 msg_format = '|   %7.2f  |   %9d   |  %9d | %2.2e |  %8.2f kO/s |   %8.2f kO/s |   %8.2f s |  %d |\n';
 
 fprintf(      '|------------|---------------|------------|----------|----------------|-----------------|--------------|--------------|\n')
+if decoding_scheme==1
+    %minsum
+    fprintf(      '|------------|---------------|------------|---MINSUM-|----------------|-----------------|--------------|--------------|\n')
+else
+    %bp
+        fprintf(      '|------------|---------------|------------|-----BP---|----------------|-----------------|--------------|--------------|\n')
+end
 msg_header =  '|  Eb/N0 dB  |    Bit nbr    |  Bit err   |   TEB    |    Debit Tx    |     Debit Rx    | Tps restant  |    Trame     |\n';
 fprintf(msg_header);
 fprintf(      '|------------|---------------|------------|----------|----------------|-----------------|--------------|--------------|\n')
 
 
 %% Simulation
-for nb_it=nb_its
-%     nb_trame=0;
-% for packet=1:pqt_par_trame
-%     nb_trame=nb_trame+1;
+% for nb_it=nb_its
+
 for i_snr = 1:length(EbN0dB)
     reverseStr = ''; % Pour affichage en console
     awgn_channel.EsNo = EsN0dB(i_snr);% Mise a jour du EbN0 pour le canal
@@ -124,8 +126,11 @@ for i_snr = 1:length(EbN0dB)
         %% Recepteur
         rx_tic = tic;                  % Mesure du d�bit de d�codage
         Lc      = step(demod_psk,y);   % D�modulation (retourne des LLRs)
-        Lc_decoded=decode_minsum(Lc, h, nb_it); %decodage par minsum
-        Lc_decoded=decode_BP(Lc, h, nb_it); %decodage par BP
+        if decoding_scheme==1
+        Lc_decoded=decode_minsum(Lc, h, nb_it);
+        else        
+            Lc_decoded=decode_BP(Lc, h, nb_it);
+        end
 
         rec_b = double(Lc_decoded(end-bit_par_pqt+1:end) < 0); % D�cision
         T_rx    = T_rx + toc(rx_tic);  % Mesure du d�bit de d�codage
@@ -162,7 +167,6 @@ for i_snr = 1:length(EbN0dB)
     reverseStr = repmat(sprintf('\b'), 1, msg_sz);
     
     ber(i_snr) = err_stat(1);
-
     refreshdata(h_ber);
     drawnow limitrate
     
@@ -183,8 +187,9 @@ grid on
 xlabel('$\frac{E_b}{N_0}$ en dB','Interpreter', 'latex', 'FontSize',14)
 ylabel('TEB','Interpreter', 'latex', 'FontSize',14)
 
-end %iteration loop
+% end %iteration loop
+end %decoding scheme loop
 hold off
-legend(ber_legend);
+% legend(ber_legend);
 save(simulation_name,'EbN0dB','ber')
 

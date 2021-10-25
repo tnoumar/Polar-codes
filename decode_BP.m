@@ -1,4 +1,4 @@
-function Lc_decoded= decode_ldpc(llr, H, nb_it)
+function Lc_decoded= decode_BP(llr, H, nb_it)
         Lc=llr; 
         vc = zeros(size(H));
         cv = zeros(size(H));        

@@ -13,10 +13,8 @@ R = 1; % Rendement de la communication
 [H] = alist2sparse('alist/DEBUG_6_3.alist');
 [h, G] = ldpc_h2g(H);
 H=full(h);
-sH=size(H);
-R = sH(2)/sH(1); % Rendement de la communication
 
-nb_its=[1,5,10,50];
+nb_its=1:5;
 pqt_par_trame = 110; % Nombre de paquets par trame
 bit_par_pqt   = 3;% Nombre de bits par paquet
 K = pqt_par_trame*bit_par_pqt; % Nombre de bits de message par trame
@@ -65,9 +63,7 @@ awgn_channel = comm.AWGNChannel(...
 stat_erreur = comm.ErrorRate(); % Calcul du nombre d'erreur et du BER
 
 %% Initialisation des vecteurs de r�sultats
-ber = zeros(1,length(EbN0dB)); %bit error rate
-per = zeros(1,length(EbN0dB)); %packet error rate
-fer = zeros(1,length(EbN0dB)); %frame error rate
+ber = zeros(1,length(EbN0dB));
 Pe = qfunc(sqrt(2*EbN0));
 
 %% Pr�paration de l'affichage
@@ -124,9 +120,7 @@ for i_snr = 1:length(EbN0dB)
         %% Recepteur
         rx_tic = tic;                  % Mesure du d�bit de d�codage
         Lc      = step(demod_psk,y);   % D�modulation (retourne des LLRs)
-        Lc_decoded=decode_minsum(Lc, h, nb_it); %decodage par minsum
-        Lc_decoded=decode_BP(Lc, h, nb_it); %decodage par BP
-
+        Lc_decoded=decode_minsum(Lc, h, nb_it);
         rec_b = double(Lc_decoded(end-bit_par_pqt+1:end) < 0); % D�cision
         T_rx    = T_rx + toc(rx_tic);  % Mesure du d�bit de d�codage
         
@@ -162,7 +156,6 @@ for i_snr = 1:length(EbN0dB)
     reverseStr = repmat(sprintf('\b'), 1, msg_sz);
     
     ber(i_snr) = err_stat(1);
-
     refreshdata(h_ber);
     drawnow limitrate
     
