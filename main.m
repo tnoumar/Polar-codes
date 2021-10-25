@@ -1,5 +1,4 @@
-clear
-clc
+clear; clc
 close all
 
 ber_legend={'BER 1 iteration', 'BER 2 iteration', 'BER 3 iteration', 'BER 4 iteration', 'BER 5 iteration'};
