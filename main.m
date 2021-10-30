@@ -5,7 +5,7 @@ close all
 %% Parametres
 % -------------------------------------------------------------------------
 addpath('src')
-simulation_name = 'non_codee';
+simulation_name = '6_3';
 
 R = 1; % Rendement de la communication
 
@@ -30,7 +30,7 @@ EbN0dB_max  = 10; % Maximum de EbN0
 EbN0dB_step = 1;% Pas de EbN0
 
 nbr_erreur  = 100;  % Nombre d'erreurs à observer avant de calculer un BER
-nbr_bit_max = 5e6;% Nombre de bits max à simuler
+nbr_bit_max = 5e3;% Nombre de bits max à simuler
 ber_min     = 1e-9; % BER min
 
 EbN0dB = EbN0dB_min:EbN0dB_step:EbN0dB_max;     % Points de EbN0 en dB � simuler
@@ -70,9 +70,15 @@ per = zeros(1,length(EbN0dB)); %packet error rate
 fer = zeros(1,length(EbN0dB)); %frame error rate
 Pe = qfunc(sqrt(2*EbN0));
 
+%% Save this data for plotting
+BER=[]; %matrix containing all the bers to store
+PER=[]; %matrix containing all the pers to store
+FER=[]; %matrix containing all the fers to store
+uplink_speed=[]; %debit montant Tx
+downlink_speed=[]; %debit descendant Rx
 %% Pr�paration de l'affichage
 figure(1)
-h_ber = semilogy(EbN0dB,ber,'XDataSource','EbN0dB', 'YDataSource','ber');
+h_ber = semilogy(EbN0dB,fer,'XDataSource','EbN0dB', 'YDataSource','ber');
 hold all
 ylim([1e-6 1])
 grid on
@@ -98,11 +104,18 @@ for i_snr = 1:length(EbN0dB)
     awgn_channel.EsNo = EsN0dB(i_snr);% Mise a jour du EbN0 pour le canal
     
     stat_erreur.reset; % reset du compteur d'erreur
-    err_stat    = [0 0 0]; % vecteur r�sultat de stat_erreur
-    
+    err_stat    = [0 0 0 0 0]; % vecteur r�sultat de stat_erreur
+    %{
+    err_stat(1) is BER
+    err_stat(2) is corrupt bit count
+    err_stat(3) is total bit count
+    err_stat(4) is corrupt packet count
+    err_stat(5) is corrupt frame count
+    %}
     demod_psk.Variance = awgn_channel.Variance;
     
     n_frame = 0;
+    n_packet=0;
     % for nframe=1:pqt_par_trame
 
     T_rx = 0;
@@ -124,16 +137,22 @@ for i_snr = 1:length(EbN0dB)
         %% Recepteur
         rx_tic = tic;                  % Mesure du d�bit de d�codage
         Lc      = step(demod_psk,y);   % D�modulation (retourne des LLRs)
-        Lc_decoded=decode_minsum(Lc, h, nb_it); %decodage par minsum
+%         Lc_decoded=decode_minsum(Lc, h, nb_it); %decodage par minsum
         Lc_decoded=decode_BP(Lc, h, nb_it); %decodage par BP
 
         rec_b = double(Lc_decoded(end-bit_par_pqt+1:end) < 0); % D�cision
         T_rx    = T_rx + toc(rx_tic);  % Mesure du d�bit de d�codage
         
-        err_stat   = step(stat_erreur, b, rec_b); % Comptage des erreurs binaires
-        
+        err_stat(1:3)   = step(stat_erreur, b, rec_b); % Comptage des erreurs binaires
+        if (err_stat(2)>0) % if inside this packet one bit or more are corrupted then increment packet error count
+            err_stat(4)=err_stat(4)+1;
+        end
         %% Affichage du r�sultat
         if mod(n_frame,pqt_par_trame) == 1
+            if (err_stat(4)>0) %if inside this frame a packet or more are corrupted then increment frame error
+            err_stat(5)=err_stat(5)+1;
+            end
+        
             msg = sprintf(msg_format,...
                 EbN0dB(i_snr),         ... % EbN0 en dB
                 err_stat(3),           ... % Nombre de bits envoy�s
@@ -142,7 +161,7 @@ for i_snr = 1:length(EbN0dB)
                 err_stat(3)/8/T_tx/1e3,... % D�bit d'encodage
                 err_stat(3)/8/T_rx/1e3,... % D�bit de d�codage
                 toc(general_tic)*(nbr_erreur - min(err_stat(2),nbr_erreur))/(min(err_stat(2),nbr_erreur)), ...% Temps restant
-                n_frame); %nombre de trames
+                uint32(n_frame/pqt_par_trame)); %nombre de trames
             fprintf(reverseStr);
             msg_sz =  fprintf(msg);
             reverseStr = repmat(sprintf('\b'), 1, msg_sz);
@@ -162,7 +181,8 @@ for i_snr = 1:length(EbN0dB)
     reverseStr = repmat(sprintf('\b'), 1, msg_sz);
     
     ber(i_snr) = err_stat(1);
-
+    per(i_snr)=(err_stat(4)*bit_par_pqt)/err_stat(3);
+    fer(i_snr)=(err_stat(5)*bit_par_pqt)/err_stat(3)*pqt_par_trame;
     refreshdata(h_ber);
     drawnow limitrate
     
@@ -175,16 +195,20 @@ fprintf('|------------|---------------|------------|----------|----------------|
 
 %%
 figure(1)
-semilogy(EbN0dB,ber);
+semilogy(EbN0dB,fer);
 hold all
 xlim([0 10])
 ylim([1e-6 1])
 grid on
 xlabel('$\frac{E_b}{N_0}$ en dB','Interpreter', 'latex', 'FontSize',14)
 ylabel('TEB','Interpreter', 'latex', 'FontSize',14)
-
+FER= [FER; fer];
+BER= [BER; ber];
+PER= [PER; per];
+uplink_speed=[uplink_speed; err_stat(3)/8/T_tx/1e3];
+downlink_speed=[downlink_speed; err_stat(3)/8/T_rx/1e3];
 end %iteration loop
 hold off
-legend(ber_legend);
-save(simulation_name,'EbN0dB','ber')
+% legend(ber_legend);
+save(simulation_name,'EbN0dB','BER', "FER", "PER", "uplink_speed", "downlink_speed", 'Pe')
 
