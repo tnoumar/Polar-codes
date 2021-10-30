@@ -30,7 +30,7 @@ EbN0dB_max  = 10; % Maximum de EbN0
 EbN0dB_step = 1;% Pas de EbN0
 
 nbr_erreur  = 100;  % Nombre d'erreurs à observer avant de calculer un BER
-nbr_bit_max = 2e6;% Nombre de bits max à simuler
+nbr_bit_max = 2e5;% Nombre de bits max à simuler
 ber_min     = 1e-9; % BER min
 
 EbN0dB = EbN0dB_min:EbN0dB_step:EbN0dB_max;     % Points de EbN0 en dB � simuler
@@ -118,7 +118,8 @@ for i_snr = 1:length(EbN0dB)
     T_rx = 0;
     T_tx = 0;
     general_tic = tic;
-
+    previous_error_packet=0;
+    previous_error_frame=0;
     while (err_stat(2) < nbr_erreur && err_stat(3) < nbr_bit_max)
         n_packet = n_packet + 1;
         %% Emetteur
@@ -141,13 +142,15 @@ for i_snr = 1:length(EbN0dB)
         T_rx    = T_rx + toc(rx_tic);  % Mesure du d�bit de d�codage
         
         err_stat(1:3)   = step(stat_erreur, b, rec_b); % Comptage des erreurs binaires
-        if (err_stat(2)>0) % if inside this packet one bit or more are corrupted then increment packet error count
+        if (err_stat(2)>previous_error_packet) % if inside this packet one bit or more are corrupted then increment packet error count
+           previous_error_packet=err_stat(2);
             err_stat(4)=err_stat(4)+1;
         end
         %% Affichage du r�sultat
         if mod(n_packet,pqt_par_trame) == 1 %n-ième trame
-            if (err_stat(4)>0) %if inside this frame a packet or more are corrupted then increment frame error
-            err_stat(5)=err_stat(5)+1;
+            if (err_stat(4)>previous_error_frame) %if inside this frame a packet or more are corrupted then increment frame error
+                previous_error_frame=err_stat(4);
+                err_stat(5)=err_stat(5)+1;
             end
         
             msg = sprintf(msg_format,...
