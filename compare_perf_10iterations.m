@@ -28,7 +28,7 @@ EbN0dB_max  = 10; % Maximum de EbN0
 EbN0dB_step = 1;% Pas de EbN0
 
 nbr_erreur  = 100;  % Nombre d'erreurs à observer avant de calculer un BER
-nbr_bit_max = 1e6;% Nombre de bits max à simuler
+nbr_bit_max = 10e6;% Nombre de bits max à simuler
 ber_min     = 1e-9; % BER min
 
 EbN0dB = EbN0dB_min:EbN0dB_step:EbN0dB_max;     % Points de EbN0 en dB � simuler
