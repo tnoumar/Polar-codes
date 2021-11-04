@@ -5,20 +5,20 @@ close all
 %% Parametres
 % -------------------------------------------------------------------------
 addpath('src')
-simulation_name = '6_3';
+simulation_name = 'macckay';
 
 R = 1; % Rendement de la communication
 
 
-[H] = alist2sparse('alist/DEBUG_6_3.alist');
+[H] = alist2sparse('alist/MACKAY_504_1008.alist');
 [h, G] = ldpc_h2g(H);
 H=full(h);
 sH=size(H);
 R = sH(2)/sH(1); % Rendement de la communication
 
-nb_its=[1,2,3, 4, 5];
-pqt_par_trame = 100; % Nombre de paquets par trame
-bit_par_pqt   = 3;% Nombre de bits par paquet
+nb_its=[1,5,10,50];
+pqt_par_trame = 10; % Nombre de paquets par trame
+bit_par_pqt   = 504;% Nombre de bits par paquet
 K = pqt_par_trame*bit_par_pqt; % Nombre de bits de message par trame
 N = K/R; % Nombre de bits cod�s par trame (cod�e)
 
@@ -30,7 +30,7 @@ EbN0dB_max  = 10; % Maximum de EbN0
 EbN0dB_step = 1;% Pas de EbN0
 
 nbr_erreur  = 100;  % Nombre d'erreurs à observer avant de calculer un BER
-nbr_bit_max = 5e6;% Nombre de bits max à simuler
+nbr_bit_max = 100e6;% Nombre de bits max à simuler
 ber_min     = 1e-9; % BER min
 
 EbN0dB = EbN0dB_min:EbN0dB_step:EbN0dB_max;     % Points de EbN0 en dB � simuler
@@ -86,12 +86,12 @@ xlabel('$\frac{E_b}{N_0}$ en dB','Interpreter', 'latex', 'FontSize',14)
 ylabel('TEB','Interpreter', 'latex', 'FontSize',14)
 
 %% Pr�paration de l'affichage en console
-msg_format = '|   %7.2f  |   %9d   |  %9d | %2.2e |  %8.2f kO/s |   %8.2f kO/s |   %8.2f s |  %d |\n';
-
-fprintf(      '|------------|---------------|------------|----------|----------------|-----------------|--------------|--------------|\n')
-msg_header =  '|  Eb/N0 dB  |    Bit nbr    |  Bit err   |   TEB    |    Debit Tx    |     Debit Rx    | Tps restant  |    Trame     |\n';
-fprintf(msg_header);
-fprintf(      '|------------|---------------|------------|----------|----------------|-----------------|--------------|--------------|\n')
+% msg_format = '|   %7.2f  |   %9d   |  %9d | %2.2e |  %8.2f kO/s |   %8.2f kO/s |   %8.2f s |  %d |\n';
+% 
+% fprintf(      '|------------|---------------|------------|----------|----------------|-----------------|--------------|--------------|\n')
+% msg_header =  '|  Eb/N0 dB  |    Bit nbr    |  Bit err   |   TEB    |    Debit Tx    |     Debit Rx    | Tps restant  |    Trame     |\n';
+% fprintf(msg_header);
+% fprintf(      '|------------|---------------|------------|----------|----------------|-----------------|--------------|--------------|\n')
 
 
 %% Simulation
@@ -153,33 +153,33 @@ for i_snr = 1:length(EbN0dB)
                 err_stat(5)=err_stat(5)+1;
             end
         
-            msg = sprintf(msg_format,...
-                EbN0dB(i_snr),         ... % EbN0 en dB
-                err_stat(3),           ... % Nombre de bits envoy�s
-                err_stat(2),           ... % Nombre d'erreurs observ�es
-                err_stat(1),           ... % BER
-                err_stat(3)/8/T_tx/1e3,... % D�bit d'encodage
-                err_stat(3)/8/T_rx/1e3,... % D�bit de d�codage
-                toc(general_tic)*(nbr_erreur - min(err_stat(2),nbr_erreur))/(min(err_stat(2),nbr_erreur)), ...% Temps restant
-                uint32(n_packet/pqt_par_trame)); %nombre de trames
-            fprintf(reverseStr);
-            msg_sz =  fprintf(msg);
-            reverseStr = repmat(sprintf('\b'), 1, msg_sz);
+%             msg = sprintf(msg_format,...
+%                 EbN0dB(i_snr),         ... % EbN0 en dB
+%                 err_stat(3),           ... % Nombre de bits envoy�s
+%                 err_stat(2),           ... % Nombre d'erreurs observ�es
+%                 err_stat(1),           ... % BER
+%                 err_stat(3)/8/T_tx/1e3,... % D�bit d'encodage
+%                 err_stat(3)/8/T_rx/1e3,... % D�bit de d�codage
+%                 toc(general_tic)*(nbr_erreur - min(err_stat(2),nbr_erreur))/(min(err_stat(2),nbr_erreur)), ...% Temps restant
+%                 uint32(n_packet/pqt_par_trame)); %nombre de trames
+%             fprintf(reverseStr);
+%             msg_sz =  fprintf(msg);
+%             reverseStr = repmat(sprintf('\b'), 1, msg_sz);
         end
     end
-    
-    msg = sprintf(msg_format,...
-        EbN0dB(i_snr),         ... % EbN0 en dB
-        err_stat(3),           ... % Nombre de bits envoy�s
-        err_stat(2),           ... % Nombre d'erreurs observ�es
-        err_stat(1),           ... % BER
-        err_stat(3)/8/T_tx/1e3,... % D�bit d'encodage
-        err_stat(3)/8/T_rx/1e3,... % D�bit de d�codage
-        0,0); % Temps restant
-    fprintf(reverseStr);
-    msg_sz =  fprintf(msg);
-    reverseStr = repmat(sprintf('\b'), 1, msg_sz);
-    
+%     
+%     msg = sprintf(msg_format,...
+%         EbN0dB(i_snr),         ... % EbN0 en dB
+%         err_stat(3),           ... % Nombre de bits envoy�s
+%         err_stat(2),           ... % Nombre d'erreurs observ�es
+%         err_stat(1),           ... % BER
+%         err_stat(3)/8/T_tx/1e3,... % D�bit d'encodage
+%         err_stat(3)/8/T_rx/1e3,... % D�bit de d�codage
+%         0,0); % Temps restant
+%     fprintf(reverseStr);
+%     msg_sz =  fprintf(msg);
+%     reverseStr = repmat(sprintf('\b'), 1, msg_sz);
+%     
     ber(i_snr) = err_stat(1);
     per(i_snr)=(err_stat(4)*bit_par_pqt)/err_stat(3);
     fer(i_snr)=(err_stat(5)*bit_par_pqt)/err_stat(3)*pqt_par_trame;
